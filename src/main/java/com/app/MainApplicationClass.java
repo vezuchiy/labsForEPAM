@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @SpringBootApplication
-public class Application {
+public class MainApplicationClass {
     public static void main(String[] args) {
-        SpringApplication.run(Application.class);
+        SpringApplication.run(MainApplicationClass.class);
     }
 }
