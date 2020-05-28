@@ -15,6 +15,10 @@ public class CallCounter {
         return this.callsCount;
     }
 
+    public void nullifyCallsCount() {
+        this.callsCount = 0;
+    }
+
     public void incrementCounter() {
         this.lock.lock();
         try {

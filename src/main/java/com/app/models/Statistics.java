@@ -17,16 +17,21 @@ public class Statistics {
     }
 
     public void processList(ArrayList<ServiceResponse> responses) {
-        responses.stream().forEach(serviceResponse -> {
-                     if(serviceResponse.getResultNumber() > this.maxValue) {
-                         this.maxValue = serviceResponse.getResultNumber();
-                     }
-                     else if(serviceResponse.getResultNumber() < this.maxValue) {
-                         this.minValue = serviceResponse.getResultNumber();
-                     }
-                 });
+        boolean flagForMin = false, flagForMax = false;
         int popularCounter = 0;
         for (ServiceResponse response : responses) {
+            if(!flagForMax) {
+                flagForMax = true;
+                this.maxValue = response.getResultNumber();
+            } else if(this.maxValue < response.getResultNumber()) {
+                this.maxValue = response.getResultNumber();
+            }
+            if(!flagForMin) {
+                flagForMin = true;
+                this.minValue = response.getResultNumber();
+            } else if(this.minValue > response.getResultNumber()) {
+                this.minValue = response.getResultNumber();
+            }
             int currentCounter = Collections.frequency(responses, response);
             if(currentCounter > popularCounter) {
                 popularCounter = currentCounter;

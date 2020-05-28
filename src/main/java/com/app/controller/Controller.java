@@ -83,4 +83,9 @@ public class Controller {
     public Map<UserRequest, ServiceResponse> getCache() {
         return this.cache.getCache();
     }
+
+    @GetMapping(value = "/counterToZero")
+    public void nullifyCounter() {
+        counter.nullifyCallsCount();
+    }
 }
