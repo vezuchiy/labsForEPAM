@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantLock;
 
 
@@ -40,9 +41,9 @@ public class Controller {
     }
 
     @GetMapping(value = "/processGet")
-    public ServiceResponse processRequest(@RequestParam(value = "number") Double number,
-                                          @RequestParam(value = "from") String source,
-                                          @RequestParam(value = "to") String destination) throws BadRequestError, InternalServiceError {
+    public CompletableFuture<ServiceResponse> processRequest(@RequestParam(value = "number") Double number,
+                                                            @RequestParam(value = "from") String source,
+                                                            @RequestParam(value = "to") String destination) throws BadRequestError, InternalServiceError {
         UserRequest request = new UserRequest(number, source, destination);
         switch(this.converterService.processCheck(request)) {
             case -1: throw new BadRequestError(400, "Incorrect input parameters.");
@@ -58,13 +59,13 @@ public class Controller {
             userRequestRepository.save(request);
             ServiceResponse response = this.converterService.processConvert(request);
             serviceResponseRepository.save(response);
-            return response;
+            return CompletableFuture.completedFuture(response);
         }
-        return serviceResponseRepository.findById(findRequest.getId());
+        return CompletableFuture.completedFuture(serviceResponseRepository.findById(findRequest.getId()));
     }
 
     @PostMapping(value = "postRequestsList")
-    public Statistics processRequestsList(@RequestBody UserRequestsList requests) {
+    public CompletableFuture<Statistics> processRequestsList(@RequestBody UserRequestsList requests) {
         Statistics statistics = new Statistics();
         statistics.setGeneralNumber(requests.getRequests().size());
 
@@ -90,7 +91,7 @@ public class Controller {
                 });
 
         statistics.processList(validList);
-        return statistics;
+        return CompletableFuture.completedFuture(statistics);
     }
 
     @GetMapping(value = "/counter")
