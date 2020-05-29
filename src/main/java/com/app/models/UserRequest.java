@@ -1,10 +1,23 @@
 package com.app.models;
 
+import javax.persistence.*;
 import java.util.Objects;
 
+@Entity
+@Table(name = "user_requests_table")
 public class UserRequest {
+    @Id
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @Column(name = "number")
     private Double number;
+
+    @Column(name = "source")
     private String source;
+
+    @Column(name = "destination")
     private String destination;
 
     public UserRequest() {}
@@ -52,5 +65,13 @@ public class UserRequest {
 
     public void setDestination(String destination) {
         this.destination = destination;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

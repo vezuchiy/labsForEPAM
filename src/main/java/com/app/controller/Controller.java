@@ -1,12 +1,16 @@
 package com.app.controller;
 
+
 import com.app.exceptions.BadRequestError;
 import com.app.exceptions.InternalServiceError;
 import com.app.models.*;
+import com.app.repositories.UserRequestRepository;
 import com.app.services.CacheService;
 import com.app.services.ConverterService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -18,10 +22,18 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequestMapping(value = "/converter")
 public class Controller {
 
-    CallCounter counter = new CallCounter(0, new ReentrantLock()); // synchronized by ReentrantLock
+    @Autowired
+    private UserRequestRepository userRequestRepository;
+
+    CallCounter counter = new CallCounter(0, new ReentrantLock());
     Logger logger = LoggerFactory.getLogger(this.getClass());
     CacheService cache = new CacheService();
     ConverterService converterService = new ConverterService();
+
+    @GetMapping("/getAll")
+    public @ResponseBody Iterable<UserRequest> getAll() {
+        return this.userRequestRepository.findAll();
+    }
 
     @GetMapping(value = "/processGet")
     public ServiceResponse processRequest(@RequestParam(value = "number") Double number,
@@ -46,6 +58,7 @@ public class Controller {
                    .orElseGet(() -> {
                        ServiceResponse response = this.converterService.processConvert(request);
                        this.cache.add(request, response);
+                       this.userRequestRepository.save(request);
                        return response;
                    });
     }
@@ -66,6 +79,7 @@ public class Controller {
                         if(!this.cache.find(request)) {
                             statistics.incUniqueNumber();
                             this.cache.add(request, response);
+                            this.userRequestRepository.save(request);
                         }
                         validList.add(response);
                     }
