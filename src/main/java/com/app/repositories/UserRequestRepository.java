@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRequestRepository extends CrudRepository<UserRequest, Long> {
     Iterable<UserRequest> findAll();
+    UserRequest findByNumberAndSourceAndDestination(Double number, String source, String destination);
 }

@@ -4,6 +4,7 @@ package com.app.controller;
 import com.app.exceptions.BadRequestError;
 import com.app.exceptions.InternalServiceError;
 import com.app.models.*;
+import com.app.repositories.ServiceResponseRepository;
 import com.app.repositories.UserRequestRepository;
 import com.app.services.CacheService;
 import com.app.services.ConverterService;
@@ -24,6 +25,9 @@ public class Controller {
 
     @Autowired
     private UserRequestRepository userRequestRepository;
+
+    @Autowired
+    private ServiceResponseRepository serviceResponseRepository;
 
     CallCounter counter = new CallCounter(0, new ReentrantLock());
     Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -48,19 +52,15 @@ public class Controller {
                 break;
             }
         }
-        counter.incrementCounter();
-        return this.cache.getCache()
-                   .entrySet()
-                   .stream()
-                   .filter(entry -> entry.getKey().equals(request))
-                   .findAny()
-                   .map(Map.Entry::getValue)
-                   .orElseGet(() -> {
-                       ServiceResponse response = this.converterService.processConvert(request);
-                       this.cache.add(request, response);
-                       this.userRequestRepository.save(request);
-                       return response;
-                   });
+
+        UserRequest findRequest = userRequestRepository.findByNumberAndSourceAndDestination(number, source, destination);
+        if(findRequest == null) {
+            userRequestRepository.save(request);
+            ServiceResponse response = this.converterService.processConvert(request);
+            serviceResponseRepository.save(response);
+            return response;
+        }
+        return serviceResponseRepository.findById(findRequest.getId());
     }
 
     @PostMapping(value = "postRequestsList")
@@ -76,14 +76,19 @@ public class Controller {
                     if(this.converterService.processCheck(request) > 0) {
                         statistics.incValidNumber();
                         ServiceResponse response = this.converterService.processConvert(request);
-                        if(!this.cache.find(request)) {
+                        UserRequest findRequest = userRequestRepository
+                                .findByNumberAndSourceAndDestination(request.getNumber(),
+                                                                     request.getSource(),
+                                                                     request.getDestination());
+                        if(findRequest == null) {
                             statistics.incUniqueNumber();
-                            this.cache.add(request, response);
-                            this.userRequestRepository.save(request);
+                            userRequestRepository.save(request);
+                            serviceResponseRepository.save(response);
                         }
                         validList.add(response);
                     }
                 });
+
         statistics.processList(validList);
         return statistics;
     }

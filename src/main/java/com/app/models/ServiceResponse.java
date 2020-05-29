@@ -1,8 +1,21 @@
 package com.app.models;
 
 
+import javax.persistence.*;
+
+@Entity
+@Table(name = "service_responses_table")
 public class ServiceResponse {
+
+    @Id
+    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "result_number")
     private Double resultNumber;
+
+    @Column(name = "final_comment")
     private String  finalComment;
 
     public ServiceResponse() {}
