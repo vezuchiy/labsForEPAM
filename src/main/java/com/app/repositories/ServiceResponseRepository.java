@@ -7,8 +7,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ServiceResponseRepository extends CrudRepository<ServiceResponse, Long> {
-    @Async
+    @Async("myExecutor")
     Iterable<ServiceResponse> findAll();
-    @Async
+    @Async("myExecutor")
     ServiceResponse findById(Integer id);
 }
