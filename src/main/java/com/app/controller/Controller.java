@@ -35,10 +35,15 @@ public class Controller {
     CacheService cache = new CacheService();
     ConverterService converterService = new ConverterService();
 
-    @GetMapping("/getAll")
-    public @ResponseBody Iterable<UserRequest> getAll() {
-        return this.userRequestRepository.findAll();
+    @GetMapping("{id}")
+    public CompletableFuture<ServiceResponse> getResponseById(@PathVariable("id")Integer id){
+        ServiceResponse response = serviceResponseRepository.findById(id);
+        if(response == null) {
+            return null;
+        }
+        return CompletableFuture.completedFuture(response);
     }
+
 
     @GetMapping(value = "/processGet")
     public CompletableFuture<ServiceResponse> processRequest(@RequestParam(value = "number") Double number,
@@ -61,7 +66,8 @@ public class Controller {
             serviceResponseRepository.save(response);
             return CompletableFuture.completedFuture(response);
         }
-        return CompletableFuture.completedFuture(serviceResponseRepository.findById(findRequest.getId()));
+        ServiceResponse response = serviceResponseRepository.findById(findRequest.getId());
+        return CompletableFuture.completedFuture(response);
     }
 
     @PostMapping(value = "postRequestsList")
@@ -92,6 +98,11 @@ public class Controller {
 
         statistics.processList(validList);
         return CompletableFuture.completedFuture(statistics);
+    }
+
+    @GetMapping("/getAll")
+    public @ResponseBody Iterable<UserRequest> getAll() {
+        return this.userRequestRepository.findAll();
     }
 
     @GetMapping(value = "/counter")
