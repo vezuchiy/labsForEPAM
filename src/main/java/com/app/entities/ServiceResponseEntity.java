@@ -1,16 +1,15 @@
-package com.app.models;
+package com.app.entities;
 
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "service_responses_table")
-public class ServiceResponse {
-
+public class ServiceResponseEntity {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private int id;
 
     @Column(name = "result_number")
     private Double resultNumber;
@@ -18,9 +17,9 @@ public class ServiceResponse {
     @Column(name = "final_comment")
     private String  finalComment;
 
-    public ServiceResponse() {}
+    public ServiceResponseEntity() {}
 
-    public ServiceResponse(Double value) {
+    public ServiceResponseEntity(Double value) {
         this.resultNumber = value;
     }
 
@@ -38,5 +37,13 @@ public class ServiceResponse {
 
     public String getComment() {
         return this.finalComment;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

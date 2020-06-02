@@ -1,11 +1,11 @@
-package com.app.models;
+package com.app.entities;
 
 import javax.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "user_requests_table")
-public class UserRequest {
+@Table(name = "user_requests_table_final")
+public class UserRequestEntity {
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,9 +20,9 @@ public class UserRequest {
     @Column(name = "destination")
     private String destination;
 
-    public UserRequest() {}
+    public UserRequestEntity() {}
 
-    public UserRequest(Double number, String source, String dest) {
+    public UserRequestEntity(Double number, String source, String dest) {
         this.number = number;
         this.source = source;
         this.destination = dest;
@@ -37,7 +37,7 @@ public class UserRequest {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-        UserRequest request = (UserRequest) obj;
+        UserRequestEntity request = (UserRequestEntity) obj;
         return Objects.equals(number, request.number) &&
                 Objects.equals(source, request.source) &&
                 Objects.equals(destination, request.destination);

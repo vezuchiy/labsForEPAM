@@ -1,7 +1,7 @@
 package com.app.services;
 
-import com.app.models.ServiceResponse;
-import com.app.models.UserRequest;
+import com.app.entities.ServiceResponseEntity;
+import com.app.entities.UserRequestEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,25 +10,25 @@ import java.util.Map;
 
 public class CacheService {
     Logger logger = LoggerFactory.getLogger(this.getClass());
-    private Map<UserRequest, ServiceResponse> cache = new HashMap<>();
+    private Map<UserRequestEntity, ServiceResponseEntity> cache = new HashMap<>();
 
     public CacheService() {}
 
-    public Map<UserRequest, ServiceResponse> getCache() {
+    public Map<UserRequestEntity, ServiceResponseEntity> getCache() {
         return this.cache;
     }
 
-    public boolean find(UserRequest request) {
+    public boolean find(UserRequestEntity request) {
         if (this.cache.containsKey(request)) return true;
         else return false;
     }
 
-    public void add(UserRequest request, ServiceResponse serviceResponse) {
+    public void add(UserRequestEntity request, ServiceResponseEntity serviceResponse) {
         logger.info("Save new request in the cache");
         this.cache.put(request, serviceResponse);
     }
 
-    public ServiceResponse getResponse(UserRequest request) {
+    public ServiceResponseEntity getResponse(UserRequestEntity request) {
         return this.cache.get(request);
     }
 }

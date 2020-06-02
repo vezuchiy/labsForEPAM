@@ -1,21 +1,25 @@
 package com.app.controller;
 
 
+import com.app.entities.ServiceResponseEntity;
+import com.app.entities.StatisticEntity;
+import com.app.entities.UserRequestEntity;
 import com.app.exceptions.BadRequestError;
 import com.app.exceptions.InternalServiceError;
 import com.app.models.*;
 import com.app.repositories.ServiceResponseRepository;
+import com.app.repositories.StatisticRepository;
 import com.app.repositories.UserRequestRepository;
-import com.app.services.CacheService;
 import com.app.services.ConverterService;
 
+import com.app.services.StatisticProcessService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -30,26 +34,59 @@ public class Controller {
     @Autowired
     private ServiceResponseRepository serviceResponseRepository;
 
-    CallCounter counter = new CallCounter(0, new ReentrantLock());
-    Logger logger = LoggerFactory.getLogger(this.getClass());
-    CacheService cache = new CacheService();
-    ConverterService converterService = new ConverterService();
+    @Autowired
+    private StatisticRepository statisticRepository;
 
-    @GetMapping("{id}")
-    public CompletableFuture<ServiceResponse> getResponseById(@PathVariable("id")Integer id){
-        ServiceResponse response = serviceResponseRepository.findById(id);
-        if(response == null) {
-            return null;
-        }
-        return CompletableFuture.completedFuture(response);
+    CallCounter counter = new CallCounter(0, new ReentrantLock());
+    ConverterService converterService = new ConverterService();
+    Logger logger = LoggerFactory.getLogger(this.getClass());
+    StatisticProcessService statisticProcessService = new StatisticProcessService();
+
+    @GetMapping("/process/{id}")
+    public @ResponseBody StatisticEntity getStatisticById(@PathVariable("id")Integer id){
+        return statisticRepository.findByProcessId(id);
     }
 
+    @Async("myExecutor")
+    @PostMapping(value = "/postRequestsList")
+    public CompletableFuture<StatisticEntity> processRequestsList(@RequestBody UserRequestsList requests) {
+
+        StatisticEntity statisticEntity = new StatisticEntity();
+        statisticEntity.setTotalCount(requests.getRequests().size());
+        int processId = userRequestRepository.findTopByOrderByIdDesc().getId() + 1;
+        statisticEntity.setProcessId(processId);
+
+        CompletableFuture.runAsync(() -> {
+            ArrayList<ServiceResponseEntity> validList = new ArrayList<>();
+            requests.getRequests()
+                    .stream()
+                    .forEach(request -> {
+                        if(this.converterService.processCheck(request) > 0) {
+                            statisticEntity.incValidNumber();
+                            ServiceResponseEntity response = this.converterService.processConvert(request);
+                            UserRequestEntity findRequest = userRequestRepository
+                                    .findByNumberAndSourceAndDestination(request.getNumber(), request.getSource(), request.getDestination());
+                            if(findRequest == null) {
+                                statisticEntity.incUniqueNumber();
+                                userRequestRepository.save(request);
+                                serviceResponseRepository.save(response);
+                            }
+                            validList.add(response);
+                        }
+                    });
+            this.statisticProcessService.setStatisticEntity(statisticEntity);
+            this.statisticProcessService.processList(validList);
+            statisticRepository.save(statisticEntity);
+        });
+
+        return CompletableFuture.completedFuture(statisticEntity);
+    }
 
     @GetMapping(value = "/processGet")
-    public CompletableFuture<ServiceResponse> processRequest(@RequestParam(value = "number") Double number,
-                                                            @RequestParam(value = "from") String source,
-                                                            @RequestParam(value = "to") String destination) throws BadRequestError, InternalServiceError {
-        UserRequest request = new UserRequest(number, source, destination);
+    public CompletableFuture<ServiceResponseEntity> processRequest(@RequestParam(value = "number") Double number,
+                                                                   @RequestParam(value = "from") String source,
+                                                                   @RequestParam(value = "to") String destination) throws BadRequestError, InternalServiceError {
+        UserRequestEntity request = new UserRequestEntity(number, source, destination);
         switch(this.converterService.processCheck(request)) {
             case -1: throw new BadRequestError(400, "Incorrect input parameters.");
             case -2: throw new InternalServiceError(500, "Internal service error.");
@@ -58,61 +95,24 @@ public class Controller {
                 break;
             }
         }
-
-        UserRequest findRequest = userRequestRepository.findByNumberAndSourceAndDestination(number, source, destination);
+        UserRequestEntity findRequest = userRequestRepository.findByNumberAndSourceAndDestination(number, source, destination);
         if(findRequest == null) {
             userRequestRepository.save(request);
-            ServiceResponse response = this.converterService.processConvert(request);
+            ServiceResponseEntity response = this.converterService.processConvert(request);
             serviceResponseRepository.save(response);
             return CompletableFuture.completedFuture(response);
         }
-        ServiceResponse response = serviceResponseRepository.findById(findRequest.getId());
-        return CompletableFuture.completedFuture(response);
-    }
-
-    @PostMapping(value = "postRequestsList")
-    public CompletableFuture<Statistics> processRequestsList(@RequestBody UserRequestsList requests) {
-        Statistics statistics = new Statistics();
-        statistics.setGeneralNumber(requests.getRequests().size());
-
-        ArrayList<ServiceResponse> validList = new ArrayList<>();
-
-        requests.getRequests()
-                .stream()
-                .forEach(request -> {
-                    if(this.converterService.processCheck(request) > 0) {
-                        statistics.incValidNumber();
-                        ServiceResponse response = this.converterService.processConvert(request);
-                        UserRequest findRequest = userRequestRepository
-                                .findByNumberAndSourceAndDestination(request.getNumber(),
-                                                                     request.getSource(),
-                                                                     request.getDestination());
-                        if(findRequest == null) {
-                            statistics.incUniqueNumber();
-                            userRequestRepository.save(request);
-                            serviceResponseRepository.save(response);
-                        }
-                        validList.add(response);
-                    }
-                });
-
-        statistics.processList(validList);
-        return CompletableFuture.completedFuture(statistics);
+        return CompletableFuture.completedFuture(serviceResponseRepository.findById(request.getId()));
     }
 
     @GetMapping("/getAll")
-    public @ResponseBody Iterable<UserRequest> getAll() {
+    public @ResponseBody Iterable<UserRequestEntity> getAll() {
         return this.userRequestRepository.findAll();
     }
 
     @GetMapping(value = "/counter")
     public Integer getCounter() {
         return counter.getCallsCount();
-    }
-
-    @GetMapping(value = "/cache")
-    public Map<UserRequest, ServiceResponse> getCache() {
-        return this.cache.getCache();
     }
 
     @GetMapping(value = "/counterToZero")

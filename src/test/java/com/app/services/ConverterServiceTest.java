@@ -1,6 +1,6 @@
 package com.app.services;
 
-import com.app.models.UserRequest;
+import com.app.entities.UserRequestEntity;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConverterServiceTest {
     @Test
     void processCheckTesting() {
-        UserRequest request = new UserRequest((double) 12, "inches", "meters");
+        UserRequestEntity request = new UserRequestEntity((double) 12, "inches", "meters");
         ConverterService service = new ConverterService();
 
         assertEquals(service.processCheck(request), 1);

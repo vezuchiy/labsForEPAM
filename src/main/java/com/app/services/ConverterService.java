@@ -1,12 +1,12 @@
 package com.app.services;
 
-import com.app.models.ServiceResponse;
-import com.app.models.UserRequest;
+import com.app.entities.ServiceResponseEntity;
+import com.app.entities.UserRequestEntity;
 
 public class ConverterService {
     private Double coefficient = 39.371;
 
-    public int processCheck(UserRequest request) {
+    public int processCheck(UserRequestEntity request) {
         if(request.getNumber() == null) {
             return -1; // Bad parameters
         }
@@ -20,8 +20,8 @@ public class ConverterService {
         return 1;
     }
 
-    public ServiceResponse processConvert(UserRequest request) { // main calculations
-        ServiceResponse response = new ServiceResponse();
+    public ServiceResponseEntity processConvert(UserRequestEntity request) { // main calculations
+        ServiceResponseEntity response = new ServiceResponseEntity();
         if(request.getSource().equals("meters") && request.getDestination().equals("inches")) {
             response.setComment("meters -> inches");
             response.setResultNumber(request.getNumber() * this.coefficient);
